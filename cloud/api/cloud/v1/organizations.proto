@@ -1,0 +1,263 @@
+syntax = "proto3";
+
+package temporal.cloud.api.v1;
+
+option go_package = "go.temporal.io/cloud/api/cloud/v1;cloudv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/field_mask.proto";
+
+// OrganizationService manages organizations in Temporal Cloud.
+service OrganizationService {
+  // CreateOrganization creates a new organization.
+  rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
+  
+  // GetOrganization retrieves an organization by ID.
+  rpc GetOrganization(GetOrganizationRequest) returns (GetOrganizationResponse);
+  
+  // UpdateOrganization updates an organization.
+  rpc UpdateOrganization(UpdateOrganizationRequest) returns (UpdateOrganizationResponse);
+  
+  // DeleteOrganization deletes an organization.
+  rpc DeleteOrganization(DeleteOrganizationRequest) returns (DeleteOrganizationResponse);
+  
+  // ListOrganizations lists organizations the caller has access to.
+  rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
+  
+  // InviteUser invites a user to join an organization.
+  rpc InviteUser(InviteUserRequest) returns (InviteUserResponse);
+  
+  // ListMembers lists members of an organization.
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
+  
+  // UpdateMemberRole updates a member's role in an organization.
+  rpc UpdateMemberRole(UpdateMemberRoleRequest) returns (UpdateMemberRoleResponse);
+  
+  // RemoveMember removes a member from an organization.
+  rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
+}
+
+// Organization represents a Temporal Cloud organization.
+message Organization {
+  // Unique identifier for the organization.
+  string id = 1;
+  
+  // Human-readable name of the organization.
+  string name = 2;
+  
+  // URL-safe slug for the organization (unique).
+  string slug = 3;
+  
+  // Organization settings.
+  OrganizationSettings settings = 4;
+  
+  // Timestamp when the organization was created.
+  google.protobuf.Timestamp created_at = 5;
+  
+  // Timestamp when the organization was last updated.
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// OrganizationSettings contains organization-level settings.
+message OrganizationSettings {
+  // Whether SAML SSO is enabled.
+  bool sso_enabled = 1;
+  
+  // SAML SSO configuration (if enabled).
+  SAMLConfig saml_config = 2;
+  
+  // Whether SCIM provisioning is enabled.
+  bool scim_enabled = 3;
+  
+  // Default retention period for new namespaces (days).
+  int32 default_retention_days = 4;
+  
+  // Allowed regions for namespace creation.
+  repeated string allowed_regions = 5;
+}
+
+// SAMLConfig contains SAML SSO configuration.
+message SAMLConfig {
+  // Identity Provider Entity ID.
+  string idp_entity_id = 1;
+  
+  // Identity Provider SSO URL.
+  string idp_sso_url = 2;
+  
+  // Identity Provider certificate (PEM format).
+  string idp_certificate = 3;
+  
+  // Service Provider Entity ID.
+  string sp_entity_id = 4;
+  
+  // Service Provider ACS URL.
+  string sp_acs_url = 5;
+}
+
+// OrganizationMember represents a member of an organization.
+message OrganizationMember {
+  // User ID.
+  string user_id = 1;
+  
+  // User email.
+  string email = 2;
+  
+  // User name.
+  string name = 3;
+  
+  // Role in the organization.
+  OrganizationRole role = 4;
+  
+  // Timestamp when the user joined.
+  google.protobuf.Timestamp joined_at = 5;
+}
+
+// OrganizationRole defines roles within an organization.
+enum OrganizationRole {
+  ORGANIZATION_ROLE_UNSPECIFIED = 0;
+  ORGANIZATION_ROLE_OWNER = 1;
+  ORGANIZATION_ROLE_ADMIN = 2;
+  ORGANIZATION_ROLE_DEVELOPER = 3;
+  ORGANIZATION_ROLE_READ_ONLY = 4;
+}
+
+// CreateOrganizationRequest is the request for CreateOrganization.
+message CreateOrganizationRequest {
+  // Name of the organization.
+  string name = 1;
+  
+  // URL-safe slug (optional, generated from name if not provided).
+  string slug = 2;
+}
+
+// CreateOrganizationResponse is the response for CreateOrganization.
+message CreateOrganizationResponse {
+  // The created organization.
+  Organization organization = 1;
+}
+
+// GetOrganizationRequest is the request for GetOrganization.
+message GetOrganizationRequest {
+  // Organization ID.
+  string organization_id = 1;
+}
+
+// GetOrganizationResponse is the response for GetOrganization.
+message GetOrganizationResponse {
+  // The organization.
+  Organization organization = 1;
+}
+
+// UpdateOrganizationRequest is the request for UpdateOrganization.
+message UpdateOrganizationRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // Updated organization data.
+  Organization organization = 2;
+  
+  // Fields to update.
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+// UpdateOrganizationResponse is the response for UpdateOrganization.
+message UpdateOrganizationResponse {
+  // The updated organization.
+  Organization organization = 1;
+}
+
+// DeleteOrganizationRequest is the request for DeleteOrganization.
+message DeleteOrganizationRequest {
+  // Organization ID.
+  string organization_id = 1;
+}
+
+// DeleteOrganizationResponse is the response for DeleteOrganization.
+message DeleteOrganizationResponse {}
+
+// ListOrganizationsRequest is the request for ListOrganizations.
+message ListOrganizationsRequest {
+  // Maximum number of organizations to return.
+  int32 page_size = 1;
+  
+  // Page token for pagination.
+  string page_token = 2;
+}
+
+// ListOrganizationsResponse is the response for ListOrganizations.
+message ListOrganizationsResponse {
+  // List of organizations.
+  repeated Organization organizations = 1;
+  
+  // Token for the next page.
+  string next_page_token = 2;
+}
+
+// InviteUserRequest is the request for InviteUser.
+message InviteUserRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // Email of the user to invite.
+  string email = 2;
+  
+  // Role to assign to the user.
+  OrganizationRole role = 3;
+}
+
+// InviteUserResponse is the response for InviteUser.
+message InviteUserResponse {
+  // Invitation ID.
+  string invitation_id = 1;
+}
+
+// ListMembersRequest is the request for ListMembers.
+message ListMembersRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // Maximum number of members to return.
+  int32 page_size = 2;
+  
+  // Page token for pagination.
+  string page_token = 3;
+}
+
+// ListMembersResponse is the response for ListMembers.
+message ListMembersResponse {
+  // List of members.
+  repeated OrganizationMember members = 1;
+  
+  // Token for the next page.
+  string next_page_token = 2;
+}
+
+// UpdateMemberRoleRequest is the request for UpdateMemberRole.
+message UpdateMemberRoleRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // User ID.
+  string user_id = 2;
+  
+  // New role.
+  OrganizationRole role = 3;
+}
+
+// UpdateMemberRoleResponse is the response for UpdateMemberRole.
+message UpdateMemberRoleResponse {
+  // Updated member.
+  OrganizationMember member = 1;
+}
+
+// RemoveMemberRequest is the request for RemoveMember.
+message RemoveMemberRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // User ID.
+  string user_id = 2;
+}
+
+// RemoveMemberResponse is the response for RemoveMember.
+message RemoveMemberResponse {}

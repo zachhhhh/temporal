@@ -1,0 +1,457 @@
+syntax = "proto3";
+
+package temporal.cloud.api.v1;
+
+option go_package = "go.temporal.io/cloud/api/cloud/v1;cloudv1";
+
+import "google/protobuf/timestamp.proto";
+
+// BillingService manages billing and subscriptions in Temporal Cloud.
+service BillingService {
+  // GetSubscription retrieves the subscription for an organization.
+  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse);
+  
+  // UpdateSubscription updates the subscription plan.
+  rpc UpdateSubscription(UpdateSubscriptionRequest) returns (UpdateSubscriptionResponse);
+  
+  // GetUsage retrieves usage data for an organization.
+  rpc GetUsage(GetUsageRequest) returns (GetUsageResponse);
+  
+  // GetUsageByNamespace retrieves usage data for a specific namespace.
+  rpc GetUsageByNamespace(GetUsageByNamespaceRequest) returns (GetUsageByNamespaceResponse);
+  
+  // ListInvoices lists invoices for an organization.
+  rpc ListInvoices(ListInvoicesRequest) returns (ListInvoicesResponse);
+  
+  // GetInvoice retrieves a specific invoice.
+  rpc GetInvoice(GetInvoiceRequest) returns (GetInvoiceResponse);
+  
+  // GetCreditBalance retrieves the credit balance for an organization.
+  rpc GetCreditBalance(GetCreditBalanceRequest) returns (GetCreditBalanceResponse);
+  
+  // PurchaseCredits purchases credits for an organization.
+  rpc PurchaseCredits(PurchaseCreditsRequest) returns (PurchaseCreditsResponse);
+  
+  // UpdatePaymentMethod updates the payment method for an organization.
+  rpc UpdatePaymentMethod(UpdatePaymentMethodRequest) returns (UpdatePaymentMethodResponse);
+}
+
+// PlanTier represents subscription plan tiers.
+enum PlanTier {
+  PLAN_TIER_UNSPECIFIED = 0;
+  PLAN_TIER_FREE = 1;
+  PLAN_TIER_ESSENTIALS = 2;
+  PLAN_TIER_BUSINESS = 3;
+  PLAN_TIER_ENTERPRISE = 4;
+  PLAN_TIER_MISSION_CRITICAL = 5;
+}
+
+// SubscriptionStatus represents subscription status.
+enum SubscriptionStatus {
+  SUBSCRIPTION_STATUS_UNSPECIFIED = 0;
+  SUBSCRIPTION_STATUS_ACTIVE = 1;
+  SUBSCRIPTION_STATUS_PAST_DUE = 2;
+  SUBSCRIPTION_STATUS_SUSPENDED = 3;
+  SUBSCRIPTION_STATUS_CANCELED = 4;
+  SUBSCRIPTION_STATUS_TRIALING = 5;
+}
+
+// Subscription represents an organization's subscription.
+message Subscription {
+  // Subscription ID.
+  string id = 1;
+  
+  // Organization ID.
+  string organization_id = 2;
+  
+  // Plan tier.
+  PlanTier plan = 3;
+  
+  // Subscription status.
+  SubscriptionStatus status = 4;
+  
+  // Plan limits.
+  PlanLimits limits = 5;
+  
+  // Current period start.
+  google.protobuf.Timestamp current_period_start = 6;
+  
+  // Current period end.
+  google.protobuf.Timestamp current_period_end = 7;
+  
+  // Stripe customer ID.
+  string stripe_customer_id = 8;
+  
+  // Stripe subscription ID.
+  string stripe_subscription_id = 9;
+  
+  // Timestamp when the subscription was created.
+  google.protobuf.Timestamp created_at = 10;
+  
+  // Timestamp when the subscription was last updated.
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+// PlanLimits represents the limits for a subscription plan.
+message PlanLimits {
+  // Included actions per month.
+  int64 actions_included = 1;
+  
+  // Included active storage (GB).
+  double active_storage_gb = 2;
+  
+  // Included retained storage (GB).
+  double retained_storage_gb = 3;
+  
+  // Maximum namespaces.
+  int32 max_namespaces = 4;
+  
+  // Maximum users.
+  int32 max_users = 5;
+  
+  // Maximum retention period (days).
+  int32 max_retention_days = 6;
+  
+  // Whether SSO is available.
+  bool sso_available = 7;
+  
+  // Whether SCIM is available.
+  bool scim_available = 8;
+  
+  // Whether multi-region HA is available.
+  bool multi_region_available = 9;
+}
+
+// UsageSummary represents usage data for a period.
+message UsageSummary {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // Period start.
+  google.protobuf.Timestamp period_start = 2;
+  
+  // Period end.
+  google.protobuf.Timestamp period_end = 3;
+  
+  // Total actions.
+  int64 total_actions = 4;
+  
+  // Active storage (GB-hours).
+  double active_storage_gbh = 5;
+  
+  // Retained storage (GB-hours).
+  double retained_storage_gbh = 6;
+  
+  // Usage breakdown by namespace.
+  repeated NamespaceUsage namespace_usage = 7;
+  
+  // Usage breakdown by action type.
+  ActionBreakdown action_breakdown = 8;
+}
+
+// NamespaceUsage represents usage for a single namespace.
+message NamespaceUsage {
+  // Namespace ID.
+  string namespace_id = 1;
+  
+  // Namespace name.
+  string namespace_name = 2;
+  
+  // Total actions.
+  int64 total_actions = 3;
+  
+  // Active storage (GB-hours).
+  double active_storage_gbh = 4;
+  
+  // Retained storage (GB-hours).
+  double retained_storage_gbh = 5;
+}
+
+// ActionBreakdown represents usage breakdown by action type.
+message ActionBreakdown {
+  // Workflow started.
+  int64 workflow_started = 1;
+  
+  // Workflow reset.
+  int64 workflow_reset = 2;
+  
+  // Timer started.
+  int64 timer_started = 3;
+  
+  // Signal sent.
+  int64 signal_sent = 4;
+  
+  // Query received.
+  int64 query_received = 5;
+  
+  // Update received.
+  int64 update_received = 6;
+  
+  // Activity started.
+  int64 activity_started = 7;
+  
+  // Activity heartbeat.
+  int64 activity_heartbeat = 8;
+  
+  // Local activity batch.
+  int64 local_activity_batch = 9;
+  
+  // Child workflow started.
+  int64 child_workflow_started = 10;
+  
+  // Schedule execution.
+  int64 schedule_execution = 11;
+  
+  // Nexus operation.
+  int64 nexus_operation = 12;
+  
+  // Search attribute upsert.
+  int64 search_attribute_upsert = 13;
+  
+  // Side effect recorded.
+  int64 side_effect_recorded = 14;
+  
+  // Workflow exported.
+  int64 workflow_exported = 15;
+}
+
+// Invoice represents a billing invoice.
+message Invoice {
+  // Invoice ID.
+  string id = 1;
+  
+  // Organization ID.
+  string organization_id = 2;
+  
+  // Invoice number.
+  string invoice_number = 3;
+  
+  // Period start.
+  google.protobuf.Timestamp period_start = 4;
+  
+  // Period end.
+  google.protobuf.Timestamp period_end = 5;
+  
+  // Line items.
+  repeated InvoiceLineItem line_items = 6;
+  
+  // Subtotal (cents).
+  int64 subtotal_cents = 7;
+  
+  // Tax (cents).
+  int64 tax_cents = 8;
+  
+  // Credits applied (cents).
+  int64 credits_applied_cents = 9;
+  
+  // Total (cents).
+  int64 total_cents = 10;
+  
+  // Invoice status.
+  InvoiceStatus status = 11;
+  
+  // Stripe invoice ID.
+  string stripe_invoice_id = 12;
+  
+  // PDF download URL.
+  string pdf_url = 13;
+  
+  // Timestamp when the invoice was created.
+  google.protobuf.Timestamp created_at = 14;
+  
+  // Timestamp when the invoice was paid.
+  google.protobuf.Timestamp paid_at = 15;
+}
+
+// InvoiceLineItem represents a line item on an invoice.
+message InvoiceLineItem {
+  // Description.
+  string description = 1;
+  
+  // Quantity.
+  double quantity = 2;
+  
+  // Unit.
+  string unit = 3;
+  
+  // Unit price (cents).
+  int64 unit_price_cents = 4;
+  
+  // Amount (cents).
+  int64 amount_cents = 5;
+}
+
+// InvoiceStatus represents invoice status.
+enum InvoiceStatus {
+  INVOICE_STATUS_UNSPECIFIED = 0;
+  INVOICE_STATUS_DRAFT = 1;
+  INVOICE_STATUS_OPEN = 2;
+  INVOICE_STATUS_PAID = 3;
+  INVOICE_STATUS_VOID = 4;
+  INVOICE_STATUS_UNCOLLECTIBLE = 5;
+}
+
+// CreditBalance represents an organization's credit balance.
+message CreditBalance {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // Current balance (cents).
+  int64 balance_cents = 2;
+  
+  // Credit transactions.
+  repeated CreditTransaction transactions = 3;
+}
+
+// CreditTransaction represents a credit transaction.
+message CreditTransaction {
+  // Transaction ID.
+  string id = 1;
+  
+  // Amount (cents, positive for credit, negative for debit).
+  int64 amount_cents = 2;
+  
+  // Description.
+  string description = 3;
+  
+  // Timestamp.
+  google.protobuf.Timestamp created_at = 4;
+}
+
+// GetSubscriptionRequest is the request for GetSubscription.
+message GetSubscriptionRequest {
+  // Organization ID.
+  string organization_id = 1;
+}
+
+// GetSubscriptionResponse is the response for GetSubscription.
+message GetSubscriptionResponse {
+  // The subscription.
+  Subscription subscription = 1;
+}
+
+// UpdateSubscriptionRequest is the request for UpdateSubscription.
+message UpdateSubscriptionRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // New plan tier.
+  PlanTier plan = 2;
+}
+
+// UpdateSubscriptionResponse is the response for UpdateSubscription.
+message UpdateSubscriptionResponse {
+  // The updated subscription.
+  Subscription subscription = 1;
+}
+
+// GetUsageRequest is the request for GetUsage.
+message GetUsageRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // Period start.
+  google.protobuf.Timestamp period_start = 2;
+  
+  // Period end.
+  google.protobuf.Timestamp period_end = 3;
+}
+
+// GetUsageResponse is the response for GetUsage.
+message GetUsageResponse {
+  // Usage summary.
+  UsageSummary usage = 1;
+}
+
+// GetUsageByNamespaceRequest is the request for GetUsageByNamespace.
+message GetUsageByNamespaceRequest {
+  // Namespace ID.
+  string namespace_id = 1;
+  
+  // Period start.
+  google.protobuf.Timestamp period_start = 2;
+  
+  // Period end.
+  google.protobuf.Timestamp period_end = 3;
+}
+
+// GetUsageByNamespaceResponse is the response for GetUsageByNamespace.
+message GetUsageByNamespaceResponse {
+  // Namespace usage.
+  NamespaceUsage usage = 1;
+}
+
+// ListInvoicesRequest is the request for ListInvoices.
+message ListInvoicesRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // Maximum number of invoices to return.
+  int32 page_size = 2;
+  
+  // Page token for pagination.
+  string page_token = 3;
+}
+
+// ListInvoicesResponse is the response for ListInvoices.
+message ListInvoicesResponse {
+  // List of invoices.
+  repeated Invoice invoices = 1;
+  
+  // Token for the next page.
+  string next_page_token = 2;
+}
+
+// GetInvoiceRequest is the request for GetInvoice.
+message GetInvoiceRequest {
+  // Invoice ID.
+  string invoice_id = 1;
+}
+
+// GetInvoiceResponse is the response for GetInvoice.
+message GetInvoiceResponse {
+  // The invoice.
+  Invoice invoice = 1;
+}
+
+// GetCreditBalanceRequest is the request for GetCreditBalance.
+message GetCreditBalanceRequest {
+  // Organization ID.
+  string organization_id = 1;
+}
+
+// GetCreditBalanceResponse is the response for GetCreditBalance.
+message GetCreditBalanceResponse {
+  // Credit balance.
+  CreditBalance balance = 1;
+}
+
+// PurchaseCreditsRequest is the request for PurchaseCredits.
+message PurchaseCreditsRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // Amount to purchase (cents).
+  int64 amount_cents = 2;
+}
+
+// PurchaseCreditsResponse is the response for PurchaseCredits.
+message PurchaseCreditsResponse {
+  // Updated credit balance.
+  CreditBalance balance = 1;
+  
+  // Stripe payment intent ID.
+  string payment_intent_id = 2;
+}
+
+// UpdatePaymentMethodRequest is the request for UpdatePaymentMethod.
+message UpdatePaymentMethodRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // Stripe payment method ID.
+  string payment_method_id = 2;
+}
+
+// UpdatePaymentMethodResponse is the response for UpdatePaymentMethod.
+message UpdatePaymentMethodResponse {}

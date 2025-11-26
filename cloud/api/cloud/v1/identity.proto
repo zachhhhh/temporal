@@ -1,0 +1,398 @@
+syntax = "proto3";
+
+package temporal.cloud.api.v1;
+
+option go_package = "go.temporal.io/cloud/api/cloud/v1;cloudv1";
+
+import "google/protobuf/timestamp.proto";
+
+// IdentityService manages authentication and authorization in Temporal Cloud.
+service IdentityService {
+  // CreateAPIKey creates a new API key.
+  rpc CreateAPIKey(CreateAPIKeyRequest) returns (CreateAPIKeyResponse);
+  
+  // GetAPIKey retrieves an API key by ID.
+  rpc GetAPIKey(GetAPIKeyRequest) returns (GetAPIKeyResponse);
+  
+  // ListAPIKeys lists API keys for an owner.
+  rpc ListAPIKeys(ListAPIKeysRequest) returns (ListAPIKeysResponse);
+  
+  // RevokeAPIKey revokes an API key.
+  rpc RevokeAPIKey(RevokeAPIKeyRequest) returns (RevokeAPIKeyResponse);
+  
+  // RotateAPIKey rotates an API key.
+  rpc RotateAPIKey(RotateAPIKeyRequest) returns (RotateAPIKeyResponse);
+  
+  // CreateServiceAccount creates a new service account.
+  rpc CreateServiceAccount(CreateServiceAccountRequest) returns (CreateServiceAccountResponse);
+  
+  // GetServiceAccount retrieves a service account by ID.
+  rpc GetServiceAccount(GetServiceAccountRequest) returns (GetServiceAccountResponse);
+  
+  // ListServiceAccounts lists service accounts for an organization.
+  rpc ListServiceAccounts(ListServiceAccountsRequest) returns (ListServiceAccountsResponse);
+  
+  // UpdateServiceAccount updates a service account.
+  rpc UpdateServiceAccount(UpdateServiceAccountRequest) returns (UpdateServiceAccountResponse);
+  
+  // DeleteServiceAccount deletes a service account.
+  rpc DeleteServiceAccount(DeleteServiceAccountRequest) returns (DeleteServiceAccountResponse);
+  
+  // GetUser retrieves the current user.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  
+  // UpdateUser updates the current user.
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  
+  // InitiateSAMLLogin initiates a SAML SSO login.
+  rpc InitiateSAMLLogin(InitiateSAMLLoginRequest) returns (InitiateSAMLLoginResponse);
+  
+  // CompleteSAMLLogin completes a SAML SSO login.
+  rpc CompleteSAMLLogin(CompleteSAMLLoginRequest) returns (CompleteSAMLLoginResponse);
+}
+
+// APIKey represents an API key.
+message APIKey {
+  // API key ID.
+  string id = 1;
+  
+  // Owner type (user or service_account).
+  string owner_type = 2;
+  
+  // Owner ID.
+  string owner_id = 3;
+  
+  // Display name.
+  string name = 4;
+  
+  // Key prefix (for identification).
+  string key_prefix = 5;
+  
+  // Permissions.
+  repeated Permission permissions = 6;
+  
+  // Whether the key is disabled.
+  bool disabled = 7;
+  
+  // Expiration timestamp.
+  google.protobuf.Timestamp expires_at = 8;
+  
+  // Last used timestamp.
+  google.protobuf.Timestamp last_used_at = 9;
+  
+  // Timestamp when the key was created.
+  google.protobuf.Timestamp created_at = 10;
+}
+
+// Permission represents a permission.
+message Permission {
+  // Permission type.
+  PermissionType type = 1;
+  
+  // Resource ID (namespace ID for namespace permissions).
+  string resource_id = 2;
+}
+
+// PermissionType defines permission types.
+enum PermissionType {
+  PERMISSION_TYPE_UNSPECIFIED = 0;
+  PERMISSION_TYPE_ORG_READ = 1;
+  PERMISSION_TYPE_ORG_WRITE = 2;
+  PERMISSION_TYPE_ORG_ADMIN = 3;
+  PERMISSION_TYPE_NAMESPACE_READ = 4;
+  PERMISSION_TYPE_NAMESPACE_WRITE = 5;
+  PERMISSION_TYPE_NAMESPACE_ADMIN = 6;
+  PERMISSION_TYPE_BILLING_READ = 7;
+  PERMISSION_TYPE_BILLING_WRITE = 8;
+}
+
+// ServiceAccount represents a service account.
+message ServiceAccount {
+  // Service account ID.
+  string id = 1;
+  
+  // Organization ID.
+  string organization_id = 2;
+  
+  // Display name.
+  string name = 3;
+  
+  // Description.
+  string description = 4;
+  
+  // Account-level role.
+  string account_role = 5;
+  
+  // Namespace permissions.
+  repeated NamespacePermission namespace_permissions = 6;
+  
+  // Timestamp when the service account was created.
+  google.protobuf.Timestamp created_at = 7;
+  
+  // Timestamp when the service account was last updated.
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+// NamespacePermission represents a permission on a namespace.
+message NamespacePermission {
+  // Namespace ID.
+  string namespace_id = 1;
+  
+  // Permission level.
+  string permission = 2;
+}
+
+// User represents a user.
+message User {
+  // User ID.
+  string id = 1;
+  
+  // Email address.
+  string email = 2;
+  
+  // Display name.
+  string name = 3;
+  
+  // Avatar URL.
+  string avatar_url = 4;
+  
+  // Timestamp when the user was created.
+  google.protobuf.Timestamp created_at = 5;
+  
+  // Timestamp when the user was last updated.
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// CreateAPIKeyRequest is the request for CreateAPIKey.
+message CreateAPIKeyRequest {
+  // Owner type (user or service_account).
+  string owner_type = 1;
+  
+  // Owner ID.
+  string owner_id = 2;
+  
+  // Display name.
+  string name = 3;
+  
+  // Permissions.
+  repeated Permission permissions = 4;
+  
+  // Expiration timestamp (optional).
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+// CreateAPIKeyResponse is the response for CreateAPIKey.
+message CreateAPIKeyResponse {
+  // The created API key.
+  APIKey api_key = 1;
+  
+  // The secret key (only returned once).
+  string secret_key = 2;
+}
+
+// GetAPIKeyRequest is the request for GetAPIKey.
+message GetAPIKeyRequest {
+  // API key ID.
+  string api_key_id = 1;
+}
+
+// GetAPIKeyResponse is the response for GetAPIKey.
+message GetAPIKeyResponse {
+  // The API key.
+  APIKey api_key = 1;
+}
+
+// ListAPIKeysRequest is the request for ListAPIKeys.
+message ListAPIKeysRequest {
+  // Owner type (user or service_account).
+  string owner_type = 1;
+  
+  // Owner ID.
+  string owner_id = 2;
+  
+  // Maximum number of keys to return.
+  int32 page_size = 3;
+  
+  // Page token for pagination.
+  string page_token = 4;
+}
+
+// ListAPIKeysResponse is the response for ListAPIKeys.
+message ListAPIKeysResponse {
+  // List of API keys.
+  repeated APIKey api_keys = 1;
+  
+  // Token for the next page.
+  string next_page_token = 2;
+}
+
+// RevokeAPIKeyRequest is the request for RevokeAPIKey.
+message RevokeAPIKeyRequest {
+  // API key ID.
+  string api_key_id = 1;
+}
+
+// RevokeAPIKeyResponse is the response for RevokeAPIKey.
+message RevokeAPIKeyResponse {}
+
+// RotateAPIKeyRequest is the request for RotateAPIKey.
+message RotateAPIKeyRequest {
+  // API key ID.
+  string api_key_id = 1;
+}
+
+// RotateAPIKeyResponse is the response for RotateAPIKey.
+message RotateAPIKeyResponse {
+  // The rotated API key.
+  APIKey api_key = 1;
+  
+  // The new secret key (only returned once).
+  string secret_key = 2;
+}
+
+// CreateServiceAccountRequest is the request for CreateServiceAccount.
+message CreateServiceAccountRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // Display name.
+  string name = 2;
+  
+  // Description.
+  string description = 3;
+  
+  // Account-level role.
+  string account_role = 4;
+  
+  // Namespace permissions.
+  repeated NamespacePermission namespace_permissions = 5;
+}
+
+// CreateServiceAccountResponse is the response for CreateServiceAccount.
+message CreateServiceAccountResponse {
+  // The created service account.
+  ServiceAccount service_account = 1;
+}
+
+// GetServiceAccountRequest is the request for GetServiceAccount.
+message GetServiceAccountRequest {
+  // Service account ID.
+  string service_account_id = 1;
+}
+
+// GetServiceAccountResponse is the response for GetServiceAccount.
+message GetServiceAccountResponse {
+  // The service account.
+  ServiceAccount service_account = 1;
+}
+
+// ListServiceAccountsRequest is the request for ListServiceAccounts.
+message ListServiceAccountsRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // Maximum number of service accounts to return.
+  int32 page_size = 2;
+  
+  // Page token for pagination.
+  string page_token = 3;
+}
+
+// ListServiceAccountsResponse is the response for ListServiceAccounts.
+message ListServiceAccountsResponse {
+  // List of service accounts.
+  repeated ServiceAccount service_accounts = 1;
+  
+  // Token for the next page.
+  string next_page_token = 2;
+}
+
+// UpdateServiceAccountRequest is the request for UpdateServiceAccount.
+message UpdateServiceAccountRequest {
+  // Service account ID.
+  string service_account_id = 1;
+  
+  // Display name.
+  string name = 2;
+  
+  // Description.
+  string description = 3;
+  
+  // Account-level role.
+  string account_role = 4;
+  
+  // Namespace permissions.
+  repeated NamespacePermission namespace_permissions = 5;
+}
+
+// UpdateServiceAccountResponse is the response for UpdateServiceAccount.
+message UpdateServiceAccountResponse {
+  // The updated service account.
+  ServiceAccount service_account = 1;
+}
+
+// DeleteServiceAccountRequest is the request for DeleteServiceAccount.
+message DeleteServiceAccountRequest {
+  // Service account ID.
+  string service_account_id = 1;
+}
+
+// DeleteServiceAccountResponse is the response for DeleteServiceAccount.
+message DeleteServiceAccountResponse {}
+
+// GetUserRequest is the request for GetUser.
+message GetUserRequest {}
+
+// GetUserResponse is the response for GetUser.
+message GetUserResponse {
+  // The user.
+  User user = 1;
+}
+
+// UpdateUserRequest is the request for UpdateUser.
+message UpdateUserRequest {
+  // Display name.
+  string name = 1;
+}
+
+// UpdateUserResponse is the response for UpdateUser.
+message UpdateUserResponse {
+  // The updated user.
+  User user = 1;
+}
+
+// InitiateSAMLLoginRequest is the request for InitiateSAMLLogin.
+message InitiateSAMLLoginRequest {
+  // Organization slug.
+  string organization_slug = 1;
+  
+  // Redirect URL after login.
+  string redirect_url = 2;
+}
+
+// InitiateSAMLLoginResponse is the response for InitiateSAMLLogin.
+message InitiateSAMLLoginResponse {
+  // SAML request URL.
+  string saml_request_url = 1;
+}
+
+// CompleteSAMLLoginRequest is the request for CompleteSAMLLogin.
+message CompleteSAMLLoginRequest {
+  // SAML response.
+  string saml_response = 1;
+  
+  // Relay state.
+  string relay_state = 2;
+}
+
+// CompleteSAMLLoginResponse is the response for CompleteSAMLLogin.
+message CompleteSAMLLoginResponse {
+  // JWT access token.
+  string access_token = 1;
+  
+  // JWT refresh token.
+  string refresh_token = 2;
+  
+  // Token expiration timestamp.
+  google.protobuf.Timestamp expires_at = 3;
+}

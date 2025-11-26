@@ -1,0 +1,145 @@
+services:
+  # PostgreSQL for Cloud Platform data
+  postgresql:
+    image: postgres:15-alpine
+    container_name: temporal-cloud-postgres
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal_cloud
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal -d temporal_cloud"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: temporal-cloud-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Temporal Server (for internal workflows)
+  temporal:
+    image: temporalio/auto-setup:latest
+    container_name: temporal-cloud-temporal
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    environment:
+      - DB=postgresql
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=postgresql
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development.yaml
+    ports:
+      - "7233:7233"
+    volumes:
+      - ./config/temporal:/etc/temporal/config/dynamicconfig
+
+  # Temporal Web UI
+  temporal-ui:
+    image: temporalio/ui:latest
+    container_name: temporal-cloud-ui
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    ports:
+      - "8080:8080"
+
+  # Cloud API Service
+  cloud-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.cloud-api
+    container_name: temporal-cloud-api
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      temporal:
+        condition: service_started
+    environment:
+      - CLOUD_API_PORT=8081
+      - DB_HOST=postgresql
+      - DB_PORT=5432
+      - DB_USER=temporal
+      - DB_PASSWORD=temporal
+      - DB_NAME=temporal_cloud
+      - DB_SSL_MODE=disable
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - TEMPORAL_HOST_PORT=temporal:7233
+      - JWT_SECRET_KEY=dev-secret-key-change-in-production
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000
+    ports:
+      - "8081:8081"
+
+  # Cloud Console (Next.js)
+  cloud-console:
+    build:
+      context: ./console
+      dockerfile: Dockerfile
+    container_name: temporal-cloud-console
+    depends_on:
+      - cloud-api
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8081
+      - NEXT_PUBLIC_TEMPORAL_UI_URL=http://localhost:8080
+    ports:
+      - "3000:3000"
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: temporal-cloud-prometheus
+    volumes:
+      - ./config/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+
+  # Grafana for dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: temporal-cloud-grafana
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  default:
+    name: temporal-cloud-network

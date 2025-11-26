@@ -1,0 +1,188 @@
+syntax = "proto3";
+
+package temporal.cloud.api.v1;
+
+option go_package = "go.temporal.io/cloud/api/cloud/v1;cloudv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// AuditService provides access to audit logs.
+service AuditService {
+  // ListAuditEvents lists audit events for an organization.
+  rpc ListAuditEvents(ListAuditEventsRequest) returns (ListAuditEventsResponse);
+  
+  // GetAuditEvent retrieves a specific audit event.
+  rpc GetAuditEvent(GetAuditEventRequest) returns (GetAuditEventResponse);
+  
+  // ExportAuditEvents exports audit events to a file.
+  rpc ExportAuditEvents(ExportAuditEventsRequest) returns (ExportAuditEventsResponse);
+}
+
+// AuditEvent represents an audit log entry.
+message AuditEvent {
+  // Event ID.
+  string id = 1;
+  
+  // Organization ID.
+  string organization_id = 2;
+  
+  // Actor information.
+  AuditActor actor = 3;
+  
+  // Action performed.
+  string action = 4;
+  
+  // Result of the action.
+  AuditResult result = 5;
+  
+  // Resource affected.
+  AuditResource resource = 6;
+  
+  // Request metadata.
+  AuditRequestMetadata request_metadata = 7;
+  
+  // Additional details.
+  google.protobuf.Struct details = 8;
+  
+  // Timestamp of the event.
+  google.protobuf.Timestamp timestamp = 9;
+}
+
+// AuditActor represents the actor who performed an action.
+message AuditActor {
+  // Actor type (user, service_account, system).
+  string type = 1;
+  
+  // Actor ID.
+  string id = 2;
+  
+  // Actor email (for users).
+  string email = 3;
+  
+  // Actor name.
+  string name = 4;
+}
+
+// AuditResult represents the result of an action.
+enum AuditResult {
+  AUDIT_RESULT_UNSPECIFIED = 0;
+  AUDIT_RESULT_SUCCESS = 1;
+  AUDIT_RESULT_FAILURE = 2;
+  AUDIT_RESULT_DENIED = 3;
+}
+
+// AuditResource represents the resource affected by an action.
+message AuditResource {
+  // Resource type (organization, namespace, user, api_key, etc.).
+  string type = 1;
+  
+  // Resource ID.
+  string id = 2;
+  
+  // Resource name.
+  string name = 3;
+}
+
+// AuditRequestMetadata contains request metadata.
+message AuditRequestMetadata {
+  // Request ID.
+  string request_id = 1;
+  
+  // Client IP address.
+  string ip_address = 2;
+  
+  // User agent.
+  string user_agent = 3;
+  
+  // Request method.
+  string method = 4;
+  
+  // Request path.
+  string path = 5;
+}
+
+// ListAuditEventsRequest is the request for ListAuditEvents.
+message ListAuditEventsRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // Start timestamp filter.
+  google.protobuf.Timestamp start_time = 2;
+  
+  // End timestamp filter.
+  google.protobuf.Timestamp end_time = 3;
+  
+  // Actor ID filter.
+  string actor_id = 4;
+  
+  // Action filter.
+  string action = 5;
+  
+  // Resource type filter.
+  string resource_type = 6;
+  
+  // Resource ID filter.
+  string resource_id = 7;
+  
+  // Result filter.
+  AuditResult result = 8;
+  
+  // Maximum number of events to return.
+  int32 page_size = 9;
+  
+  // Page token for pagination.
+  string page_token = 10;
+}
+
+// ListAuditEventsResponse is the response for ListAuditEvents.
+message ListAuditEventsResponse {
+  // List of audit events.
+  repeated AuditEvent events = 1;
+  
+  // Token for the next page.
+  string next_page_token = 2;
+}
+
+// GetAuditEventRequest is the request for GetAuditEvent.
+message GetAuditEventRequest {
+  // Event ID.
+  string event_id = 1;
+}
+
+// GetAuditEventResponse is the response for GetAuditEvent.
+message GetAuditEventResponse {
+  // The audit event.
+  AuditEvent event = 1;
+}
+
+// ExportAuditEventsRequest is the request for ExportAuditEvents.
+message ExportAuditEventsRequest {
+  // Organization ID.
+  string organization_id = 1;
+  
+  // Start timestamp.
+  google.protobuf.Timestamp start_time = 2;
+  
+  // End timestamp.
+  google.protobuf.Timestamp end_time = 3;
+  
+  // Export format.
+  ExportFormat format = 4;
+}
+
+// ExportFormat defines export formats.
+enum ExportFormat {
+  EXPORT_FORMAT_UNSPECIFIED = 0;
+  EXPORT_FORMAT_JSON = 1;
+  EXPORT_FORMAT_CSV = 2;
+}
+
+// ExportAuditEventsResponse is the response for ExportAuditEvents.
+message ExportAuditEventsResponse {
+  // Download URL for the export file.
+  string download_url = 1;
+  
+  // Expiration timestamp for the download URL.
+  google.protobuf.Timestamp expires_at = 2;
+}
