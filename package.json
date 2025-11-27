@@ -1,0 +1,27 @@
+{
+  "name": "temporal",
+  "version": "1.0.0",
+  "description": "<div class=\"title-block\" style=\"text-align: center;\" align=\"center\">",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zachhhhh/temporal.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/zachhhhh/temporal/issues"
+  },
+  "homepage": "https://github.com/zachhhhh/temporal#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^24.10.1"
+  }
+}

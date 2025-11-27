@@ -44,3 +44,14 @@
 
 **/.venv/
 **/.ruff_cache/
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+cloud/.env
+cloud/.env.local
+cloud/.env.*

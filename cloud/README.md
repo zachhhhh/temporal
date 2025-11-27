@@ -7,7 +7,7 @@ This directory contains the Temporal Cloud managed service platform, built as an
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      Cloud Console                          │
-│                    (Next.js + React)                        │
+│                    (SvelteKit)                              │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -75,7 +75,7 @@ cloud/
 │   └── cloud/v1/          # Cloud API v1 protos
 ├── cmd/                    # Application entry points
 │   └── cloud-api/         # Cloud API server
-├── console/               # Next.js frontend
+├── console/               # SvelteKit frontend
 ├── infra/                 # Terraform infrastructure
 │   ├── modules/           # Reusable Terraform modules
 │   └── environments/      # Environment configurations

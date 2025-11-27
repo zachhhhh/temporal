@@ -12,6 +12,7 @@ import (
 
 	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
+	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 	"go.temporal.io/cloud/internal/api/v1"
 	"go.temporal.io/cloud/internal/config"
@@ -25,6 +26,9 @@ import (
 )
 
 func main() {
+	// Load .env file
+	_ = godotenv.Load()
+	
 	logger := log.NewZapLogger(log.BuildZapLogger(log.Config{
 		Level:  "info",
 		Format: "json",
@@ -51,6 +55,14 @@ func main() {
 	billingService := service.NewBillingService(repos, cfg.Stripe, logger)
 	identityService := service.NewIdentityService(repos, cfg.JWT, logger)
 	auditService := service.NewAuditService(repos, logger)
+	
+	// Initialize OAuth config and auth service
+	googleConfig := service.InitGoogleOAuthConfig(
+		os.Getenv("GOOGLE_CLIENT_ID"),
+		os.Getenv("GOOGLE_CLIENT_SECRET"),
+		fmt.Sprintf("http://localhost:%d", cfg.Port),
+	)
+	authService := service.NewAuthService(repos, cfg.JWT, googleConfig, logger)
 
 	// Create interceptors
 	authInterceptor := interceptors.NewAuthInterceptor(identityService, logger)
@@ -94,6 +106,13 @@ func main() {
 	)
 	mux.Handle(grpcreflect.NewHandlerV1(reflector))
 	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
+
+	// Auth HTTP endpoints
+	authHandler := api.NewAuthHandler(authService)
+	mux.HandleFunc("/auth/google/login", authHandler.HandleGoogleLogin)
+	mux.HandleFunc("/auth/google/callback", authHandler.HandleGoogleCallback)
+	mux.HandleFunc("/auth/refresh", authHandler.HandleRefreshToken)
+	mux.HandleFunc("/auth/logout", authHandler.HandleLogout)
 
 	// Health check endpoints
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
